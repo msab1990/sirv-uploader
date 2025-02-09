@@ -1,0 +1,426 @@
+
+<!-- saved from url=(0118)file:///private/var/folders/hc/gwx2k4pj05q_mz5qkbs1ygvr0000gn/T/com.microsoft.Outlook/Outlook%20Temp/sirv_uploader.htm -->
+<html><head>
+  
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+  
+  <style>
+   #image-categories {
+    display: flex;
+    justify-content: center; /* ✅ Centers icons horizontally */
+    gap: 15px; /* Space between icons */
+    flex-wrap: nowrap; /* ✅ Prevents wrapping onto a second row */
+    overflow-x: auto; /* ✅ Allows horizontal scrolling if needed */
+    margin: 20px auto;
+    max-width: fit-content; /* ✅ Keeps icons centered */
+    white-space: nowrap;
+}
+
+
+.image-preview {
+    position: relative;
+    display: inline-block;
+    margin: 10px;
+    width: 180px; /* ✅ Matches image size */
+    height: 180px; /* ✅ Matches image size */
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    padding: 5px;
+    background: white;
+    flex-shrink: 0; /* ✅ Prevents images from shrinking */
+    transition: transform 0.2s ease-in-out;
+}
+
+.image-preview img {
+    width: 180px; /* Increased from 150px */
+    height: 180px; /* Ensures uniform size */
+    border-radius: 8px;
+    object-fit: cover; /* Crops oversized images while maintaining aspect ratio */
+    transition: transform 0.2s ease-in-out;
+}
+
+
+.image-preview:hover img {
+    transform: scale(1.05); /* Slight zoom on hover */
+}
+
+.remove-image {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(255, 0, 0, 0.8);
+    color: white;
+    border: none;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    display: none; /* Hidden by default */
+}
+
+.image-preview:hover .remove-image {
+    display: block; /* Show only on hover */
+}
+
+.category {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 12px;
+    border: 2px solid #ddd;
+    box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.15);
+    width: 110px;  /* ✅ Keeps icons small so they fit in one row */
+    text-align: center;
+    flex-shrink: 0; /* ✅ Prevents them from shrinking unevenly */
+}
+
+.category:hover {
+    transform: translateY(-3px);
+    box-shadow: 3px 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.category img {
+    width: 100px;  /* Keep all icons the same size */
+    height: 100px; /* Force uniform size */
+    object-fit: cover; /* Crop oversized images to fit */
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.category p {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    text-transform: capitalize;
+    margin: 0;
+}
+.logo-img {
+    width: 180px;  /* Adjust width as needed */
+    height: auto;   /* Keep aspect ratio */
+    display: block;
+    margin: 0 auto; /* Center logo */
+}
+
+    .uploader-container {
+        width: 400px;
+        margin: auto;
+        text-align: center;
+        font-family: Arial, sans-serif;
+    }
+    
+    #drop-area:hover {
+        background: #e3e3e3;
+    }
+    
+    #browse-button {
+        background: #ff5500;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        cursor: pointer;
+    }
+    
+    #image-preview-list {
+    display: flex;
+    flex-wrap: nowrap; /* ✅ Keeps images in one row */
+    gap: 15px;
+    overflow-x: auto; /* ✅ Allows horizontal scrolling if needed */
+    padding: 10px;
+    border: 2px solid #ddd; /* ✅ Keeps border visible */
+    background: #f9f9f9;
+    border-radius: 10px;
+    width: auto; /* ✅ Allows width to expand dynamically */
+    min-width: 100%; /* ✅ Ensures full width is used */
+    max-width: 100%;
+    white-space: nowrap;
+}
+
+
+        body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+}
+
+#drop-area {
+    border: 2px dashed #0073e6;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 10px;
+    background: #f0f8ff;
+    transition: background 0.3s ease-in-out;
+}
+
+#drop-area:hover {
+    background: #e0f0ff;
+}
+
+button {
+    background: #0073e6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #005bb5;
+}
+
+#upload-button2 {
+    background: #28a745;
+    margin-top: 20px;
+}
+
+#upload-status {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #333;
+}
+
+h2 {
+    color: #333;
+}
+</style>
+</head>
+<body>
+    <!-- Tapestry Music Logo -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <img src="https://www.tapestrymusic.com/images/icons/newtapestrylogo.jpg" 
+     alt="Tapestry Music Logo" class="logo-img">
+    </div>
+
+    <!-- Header -->
+    <h2 style="color: #333; margin-top: 0;">Tapestry Music Product Image Uploader</h2>
+    <p>Images are automatically converted to JPG format. Please do not upload files larger than 100MB.</p>
+    <div id="image-categories">
+      <div class="category">
+          <img src="https://www.tapestrymusic.com/images/icons/PrimaryPhoto.jpg" alt="Primary Photo">
+          <p>Primary Photo</p>
+      </div>
+      <div class="category">
+          <img src="https://www.tapestrymusic.com/images/icons/EveryAngle.jpg" alt="Every Angle">
+          <p>Every Angle</p>
+      </div>
+      <div class="category">
+          <img src="https://www.tapestrymusic.com/images/icons/Details.jpg" alt="Details">
+          <p>Details</p>
+      </div>
+      <div class="category">
+          <img src="https://www.tapestrymusic.com/images/icons/Imperfections.jpg" alt="Imperfections">
+          <p>Imperfections</p>
+      </div>
+      <div class="category">
+          <img src="https://www.tapestrymusic.com/images/icons/InUse.jpg" alt="In Use">
+          <p>In Use</p>
+      </div>
+      <div class="category">
+        <img src="https://www.tapestrymusic.com/images/icons/SizeAndScale.jpg" alt="Size and Scale">
+          <p>Size and Scale</p>
+      </div>
+  </div>
+  
+    <!-- Uploader Container -->
+    <div class="uploader-container">
+        <h2>Upload Product Images</h2>
+        <label for="product_id">Enter Product ID:</label>
+        <input type="text" id="product_id" placeholder="Enter product ID">
+
+        <!-- Drag and Drop Area -->
+        <div id="drop-area">
+            <p>Drag & drop your images here</p>
+            <input type="file" id="file-chooser2" multiple style="display: none;">
+            <button id="browse-button">Browse Files</button>
+        </div>
+
+     
+
+        <!-- Preview and Sort -->
+        <div id="sortable-list">
+            <p>Preview & Sort Images:</p>
+            <ul id="image-preview-list"></ul>
+        </div>
+
+        <!-- Upload Button -->
+        <button id="upload-button2">Upload Images</button>
+        <div id="upload-status"></div>
+<button id="clear-status" style="background: #dc3545; margin-top: 10px;">Clear Upload Status</button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1.43/aws-sdk.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script>
+   document.addEventListener("DOMContentLoaded", function() {
+    let previewList = document.getElementById("image-preview-list"); 
+    const dropArea = document.getElementById("drop-area");
+    const fileChooser = document.getElementById("file-chooser2");
+    const browseButton = document.getElementById("browse-button");
+
+    if (!fileChooser) {
+        console.error("❌ File input not found in the DOM!");
+        return;
+    }
+
+    if (!browseButton) {
+        console.error("❌ Browse button not found in the DOM!");
+        return;
+    }
+
+    browseButton.addEventListener("click", function() {
+        console.log("✅ Browse button clicked!"); // ✅ Debugging log
+        fileChooser.click(); // ✅ Opens file selection window
+        
+        document.getElementById("clear-images").addEventListener("click", function() {
+    previewList.innerHTML = ""; // ✅ Clears all uploaded images
+});
+
+    });
+
+    // ✅ Fix: Ensure file input change event works
+    fileChooser.addEventListener("change", function(event) {
+    handleFiles(event.target.files);
+}); 
+// ✅ Dynamically expand the preview container width
+previewList.style.width = `${previewList.children.length * 200}px`; // ✅ Adjusts width dynamically
+
+  // ✅ Move this border adjustment inside `handleFiles()` where it belongs
+if (previewList.children.length > 5) {  
+    previewList.style.width = `${previewList.children.length * 200}px`; 
+    previewList.style.padding = "15px";  
+    previewList.style.border = "3px solid #aaa";  
+} else {  
+    previewList.style.padding = "10px";  
+    previewList.style.border = "2px solid #ddd";  
+} 
+
+
+dropArea.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropArea.style.background = "#f9f9f9";
+
+    let droppedFiles = e.dataTransfer.files;
+    if (droppedFiles.length > 0) {
+        handleFiles(droppedFiles); // ✅ Correctly calls handleFiles()
+    }
+});
+
+
+
+        // ✅ Initialize AWS S3 with the correct Sirv bucket name (TapProdImg)
+        var s3 = new AWS.S3({
+            endpoint: new AWS.Endpoint('https://s3.sirv.com'),
+            params: {
+                Bucket: 'TapProdImg' // ✅ Your Sirv bucket name
+            }
+        });
+    
+        // Function to handle file previews
+    
+            // Enable drag-and-drop sorting using jQuery UI
+            $("#image-preview-list").sortable();
+            $("#image-preview-list").disableSelection();
+        
+        function handleFiles(files) {
+
+    Array.from(files).forEach((file, index) => {
+        let li = document.createElement("li");
+        li.classList.add("image-preview");
+
+        let img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+
+        let removeBtn = document.createElement("button");
+        removeBtn.innerText = "❌";
+        removeBtn.classList.add("remove-image");
+        removeBtn.addEventListener("click", function() {
+            li.remove(); // Remove the image when clicked
+        });
+
+        li.appendChild(img);
+        li.appendChild(removeBtn);
+        previewList.appendChild(li);
+    });
+        
+    $("#image-preview-list").sortable({
+    update: function(event, ui) {
+        console.log("Sorting updated!"); // ✅ Debugging log
+    }
+});
+$("#image-preview-list").disableSelection();
+
+    
+ 
+
+        // Upload button event listener (no duplicate now)
+        const uploadButton = document.getElementById("upload-button2");
+
+if (uploadButton) {
+    uploadButton.addEventListener("click", function() {
+    if (uploadButton.disabled) return; // Prevent duplicate clicks
+    uploadButton.disabled = true; // Disable button during upload
+    const files = fileChooser.files;
+    if (files.length === 0) {
+        alert("No images selected.");
+        uploadButton.disabled = false; // ✅ Re-enable button if no files selected
+        return;
+    }
+
+    uploadFiles(files);
+});
+
+}
+
+            }
+   
+
+    
+        // Function to upload images to Sirv
+        function uploadFiles(files) {
+            let productID = document.getElementById("product_id").value;
+            if (!productID) {
+                alert("Enter a product ID first.");
+                return;
+            }
+    
+            Array.from(files).forEach((file, index) => {
+                let extension = file.name.split('.').pop();
+                let newFilename = `${productID}_${index + 2}_.${extension}`;
+                let objKey = `Large/${newFilename}`; // ✅ Uploads to the "Large" folder inside TapProdImg
+    
+                let params = {
+                    Key: objKey,
+                    ContentType: file.type,
+                    Body: file
+                };
+    
+                // ✅ Now uploads correctly to TapProdImg/Large
+                s3.putObject(params, function(err, data) {
+    if (err) {
+        document.getElementById("upload-status").innerHTML += "Error: " + err.message + "<br>";
+    } else {
+        document.getElementById("upload-status").innerHTML += `<span style="color: green;">✅ Uploaded: ${newFilename}</span><br>`;
+    }
+    uploadButton.disabled = false; // ✅ Now always re-enabled
+});
+
+            });
+        }
+    });
+    document.getElementById("clear-status").addEventListener("click", function() {
+    document.getElementById("upload-status").innerHTML = "";
+});
+
+    </script>
+    </body>
+    </html>
+    
+
+
