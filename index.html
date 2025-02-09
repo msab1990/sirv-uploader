@@ -1,0 +1,536 @@
+
+<!-- saved from url=(0118)file:///private/var/folders/hc/gwx2k4pj05q_mz5qkbs1ygvr0000gn/T/com.microsoft.Outlook/Outlook%20Temp/sirv_uploader.htm -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1.43/aws-sdk.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+</head>
+<body>
+  <div style="border: 1px solid grey">
+    <center>TAPESTRY PRODUCT IMAGE UPLOADER  (v1.2b)</center><br>
+    <center>Images are automatically converted to jpg.</center><br>    
+    <center>Do not upload images greater than 100MB.</center><br>    
+    <center>If any image is too big, none will be uploaded.</center>
+    <hr>
+    1: Enter Product ID<br>
+    <input type="text" id="product_id-chooser">
+    <br><br>
+
+    2: Display current filenames for Product ID<br>
+    <button id="display_product-button">Display Filenames</button>
+    <br><br>
+    3: Upload Default Image for Product ID (single file)<br>
+    <input type="file" class="file-chooser-class" id="file-chooser"><button id="upload-button">Upload Default</button>
+    <br><br>
+    4: Upload Alternate Images for Product ID (multi file)<br>
+    <input type="file" class="file-chooser-class" id="file-chooser2" multiple="">
+    <div id="sortable-list" style="border: 1px solid #ccc; padding: 10px; margin-top: 10px;">
+      <p>Drag to reorder images before uploading:</p>
+      <ul id="image-preview-list" style="list-style: none; padding: 0;"></ul>
+  </div>
+  <script>
+    document.getElementById('file-chooser2').addEventListener('change', function (event) {
+        let files = Array.from(event.target.files); // Convert FileList to an array
+        let previewList = document.getElementById("image-preview-list"); // Get the preview list
+        previewList.innerHTML = ""; // Clear previous images
+
+        // Loop through selected images
+        files.forEach((file, index) => {
+            let listItem = document.createElement("li"); // Create a list item for each image
+            listItem.style.padding = "5px";
+            listItem.style.cursor = "move"; // Set cursor to "move" for drag effect
+            listItem.setAttribute("data-index", index); // Store the index to track sorting
+
+            let img = document.createElement("img"); // Create an image element
+            img.src = URL.createObjectURL(file); // Set preview image source
+            img.style.width = "80px"; // Small preview size
+            img.style.marginRight = "10px";
+
+            let fileName = document.createElement("span"); // Create a filename label
+            fileName.innerText = file.name;
+
+            // Append the image and filename to the list item
+            listItem.appendChild(img);
+            listItem.appendChild(fileName);
+
+            // Add the list item to the preview list
+            previewList.appendChild(listItem);
+        });
+
+        // **Enable drag-and-drop sorting using jQuery UI**
+        $("#image-preview-list").sortable(); // Allow users to sort images
+        $("#image-preview-list").disableSelection(); // Prevent text selection while dragging
+    });
+</script>
+  <button id="upload-button2">Upload Alternates</button>
+    <br><br>
+    <!-- 5 (experimental): Convert image to jpg:<br/>
+    <label>Select image to convert: <input type=file id="converter"></label> -->
+
+    <input type="file" id="jpg_version_main" style="visibility:hidden;">
+    <input type="file" id="jpg_version" style="visibility:hidden;">
+    <hr noshade="">
+    RESULTS:<br>
+    <div id="results" style="border: 2px; background: #EEE;"></div>
+  </div>
+  <script>
+    //**********************************************************
+    // change following value for max filesize alert checker:
+    const maxFileSizeMB = 100; //value in MegaBytes.  Set it to 100kB max for now.    
+    //**********************************************************
+    var dTmain = new DataTransfer();
+    var dT = new DataTransfer();
+
+    function fileSizeCheck(self) {
+      // check filesize of images being uploaded which are already converted to jpg
+      console.log("checking file size for:")
+      var files = self.files; // puts all files into an array
+      var failedHTML = "";
+      // call them as such; files[0].size will get you the file size of the 0th file
+      for (var x in files) {
+        console.log(files[x].name + "; ");
+        var filesize = ((files[x].size/1024)/1024).toFixed(4); // MB
+    
+        if (files[x].name != "item" && typeof files[x].name != "undefined" && filesize > maxFileSizeMB) { 
+//files[x].name + 
+          failedHTML += "File " + x + " is too big (" + Math.round(filesize * 100) / 100 + " MB) \n";
+        }
+
+      }
+      if (failedHTML != "") {
+        alert (failedHTML);
+        return 1; // at least one file was too big
+      }
+      return 0; // ok
+    };
+
+    // convert image from type to type in raw javascript:
+    
+    // document.querySelector('input').onchange = function () {
+    //   const img = new Image();
+    //   img.onload = convert;
+    //   img.src = URL.createObjectURL(this.files[0]);
+    // };
+
+    function convert(oFileObject) {
+      // oFileObject = is designed as a single file selector's resulting data object.
+      // so oFileObject.src, oFileObject.width, oFileObject.height, etc.
+      // was set to be "this.src, this.width" etc, so revert to that code if needed.
+      URL.revokeObjectURL(oFileObject.src); // Free up memory
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = oFileObject.width;
+      canvas.height = oFileObject.height;
+      ctx.drawImage(oFileObject, 0, 0);
+      canvas.toBlob(function (blob) {
+        const file = new File([blob], 'tapProdImage.jpg', { type: 'application/octet-stream' });
+        // need to perform the download behind the scene, not changing window to dl file!
+        window.location = URL.createObjectURL(file); // Trigger download
+        //var downloadWindow = window.open('https://example.com', 'myPopup', 'width=400,height=300');
+      }, 'image/jpeg', 0.75); // Set quality
+    }
+
+    AWS.config.update({
+      'accessKeyId': 'don@tapestrymusic.com',
+      'secretAccessKey': '5l4Y4bAlTGHzBZ25DA2KHMpoqmaboS0iAeuWr4fR3YJj6IHF',
+      s3ForcePathStyle: true
+    });
+    var s3 = new AWS.S3({
+      endpoint: new AWS.Endpoint('https://s3.sirv.com'),
+      params: {
+        Bucket: 'tapestrymusic'
+      }
+    });
+    var product_idChooser = document.getElementById('product_id-chooser');
+    var DisplayProductbutton = document.getElementById('display_product-button');
+    var fileChooser = document.getElementById('file-chooser');
+    var button = document.getElementById('upload-button');
+    var fileChooser2 = document.getElementById('file-chooser2');
+    var button2 = document.getElementById('upload-button2');
+    var results = document.getElementById('results');
+    var jpg_version = document.getElementById("jpg_version");
+    var jpg_version_main = document.getElementById("jpg_version_main");
+
+    
+
+    button.addEventListener('click', function () {
+      if (product_idChooser.value == "") {
+        alert("please enter a product id first");
+        return false;
+      }
+      var product_id = product_idChooser.value;
+      var file = jpg_version_main.files[0];
+      //var file = fileChooser.files[0];
+      //file = "TapProdImg/large/" + file;
+      if (fileSizeCheck(jpg_version_main) > 0) {
+        return false;
+      }
+      if (!file) {
+        results.innerHTML = 'Nothing to upload.';
+      } else {
+        results.innerHTML = '';
+          var getExtension = file.name.slice((file.name.lastIndexOf(".") - 1 >>> 0) + 2);
+        console.log("getExtension " + getExtension);
+          var getFileName = product_id;//file.name.split('.').slice(0, -1).join('.');
+        console.log("getFileName " + getFileName);
+          var newFilename = getFileName + '.' + getExtension;
+          file.name = newFilename;
+          console.log("new file = " + newFilename);
+          objKey = "TapProdImg/large/" + newFilename;
+        var params = {
+          Key: objKey,
+          ContentType: file.type,
+          Body: file
+        };
+        s3.putObject(params, function (err, data) {
+          if (err) {
+            results.innerHTML = 'ERROR: ' + err;
+          } else {
+              results.innerHTML += "Upload successful</br>";
+            //listObjs();
+          }
+        });
+      }
+    }, false);
+
+    document.getElementById('upload-button2').addEventListener('click', function () {
+    if (product_idChooser.value == "") {
+        alert("Please enter a Product ID first.");
+        return false;
+    }
+
+    let product_id = product_idChooser.value; // Get the product ID
+    let sortedList = document.getElementById("image-preview-list").getElementsByTagName("li"); // Get sorted items
+    let files = document.getElementById('file-chooser2').files; // Get all selected files
+
+    if (sortedList.length === 0 || files.length === 0) {
+        alert("No images selected for upload.");
+        return false;
+    }
+
+    // Get files in the sorted order
+    let sortedFiles = Array.from(sortedList).map(li => files[li.getAttribute("data-index")]);
+
+    // Loop through the sorted files and upload each one
+    sortedFiles.forEach((file, index) => {
+        let extension = file.name.split('.').pop(); // Get file extension
+        let newFilename = `${product_id}_${index + 2}_.${extension}`; // Format filename
+
+        let objKey = `TapProdImg/large/${newFilename}`; // Path on Sirv
+        let params = {
+            Key: objKey,
+            ContentType: file.type,
+            Body: file
+        };
+
+        // Upload to Sirv
+        s3.putObject(params, function (err, data) {
+            if (err) {
+                results.innerHTML += 'ERROR: ' + err + '<br>';
+            } else {
+                results.innerHTML += `Uploaded: ${newFilename} <br>`;
+            }
+        });
+    });
+});
+
+        for(n=1;n<10;n++) {
+          //file = fileChooser2.files[n];
+          file = jpg_version.files[n];
+          
+          if (!file) {
+            console.log("Error: file upload failed");
+            continue;
+          }
+          var getExtension = file.name.slice((file.name.lastIndexOf(".") - 1 >>> 0) + 2);
+        console.log("getExtension " + getExtension);
+          var getFileName = product_id;//file.name.split('.').slice(0, -1).join('.');
+        console.log("getFileName " + getFileName);
+          var newFilename = getFileName + '_' + (n+2).toString() + '_' + '.' + getExtension;
+          file.name = newFilename;
+          console.log("new file = " + newFilename);
+          objKey = "TapProdImg/large/" + newFilename;
+          params = {
+            Key: objKey,
+            ContentType: file.type,
+            Body: file
+          };
+          s3.putObject(params, function (err, data) {
+            if (err) {
+              results.innerHTML += 'ERROR: ' + err;
+              console.log("ERROR" + err);
+            } else {
+              results.innerHTML += "Upload successful</br>";
+              //listObjs();
+              console.log("successful upload");
+            }
+          });
+        }
+    }, false);
+    
+    DisplayProductbutton.addEventListener('click', function () {
+      var product_id = product_idChooser.value;
+      if (product_id) {
+        results.innerHTML = '';
+        listKeysForProductInDirectory("large/","",product_id);
+      } else {
+        results.innerHTML = 'Enter product ID first';
+      }
+    }, false);
+
+    function listObjs(path = "") {
+      var prefix = '';
+      console.log("path = " , path);
+      s3.listObjects({
+        Prefix: prefix
+      }, function (err, data) {
+        if (err) {
+          results.innerHTML = 'ERROR: ' + err;
+        } else {
+          var objKeys = "";
+          data.Contents.forEach(function (obj) {
+            objKeys += obj.Key + "<br>";
+          });
+          results.innerHTML = objKeys;
+        }
+      });
+    }
+    
+    function listKeysInDirectory(path = "", base = "") {
+        var delimiter = "/";
+        console.log("## start of listKeysInDirectory");
+        if (!path.endsWith(delimiter)) {
+          path += delimiter;
+          console.log("path set to " + path);
+        }
+        if (base == "") {
+          base = "TapProdImg" + delimiter;
+          path = base + path;
+          console.log("base was empty string");
+          console.log("base changed to " + base);
+          console.log("path changed to " + path);
+        }
+        s3.listObjects({
+          Prefix: path
+        }, function (err, data) {
+          if (err) {
+            results.innerHTML = 'ERROR: ' + err;
+          } else {            
+            var objKeys = "";
+            data.Contents.forEach(function (obj) {
+              objKeys += obj.Key + "<br>";
+            });
+            results.innerHTML = objKeys;
+          }        
+        });
+        console.log("## end of listKeysInDirectory");
+      }
+      
+    function listKeysForProductInDirectory(path = "", base = "", product = "") {
+        console.log("## start of listKeysForProductInDirectory");
+        if (product == "") {
+        console.log("## exiting: missing product_id value for listKeysForProductInDirectory");
+          return false;
+        }
+        var delimiter = "/";
+        if (!path.endsWith(delimiter)) {
+          path += delimiter;
+          console.log("path set to " + path);
+        }
+        if (base == "") {
+          base = "TapProdImg" + delimiter;
+          path = base + path;
+          console.log("base was empty string");
+          console.log("base changed to " + base);
+          console.log("path changed to " + path);
+        }
+        path += product;
+        console.log("full path to search: " + path);
+
+        var suffixes = [".jpg"];//,".png",".gif","webp"]
+        var alternates = ["","_2_","_3_","_4_","_5_","_6_","_7_","_8_","_9_"]
+        //var objKeys = "abc";
+        suffixes.forEach(function(suffix) {
+          alternates.forEach(function(alternate) {
+            var alt = this.alternate;
+            s3.listObjects({
+              Prefix: path + alternate + suffix
+            }, function (err, data) {
+              if (err) {
+                //results.innerHTML = 'ERROR: ' + err;
+                console.log('ERROR: ' + err);
+                console.dir(data);
+                //results.innerHTML += 'Media Not Found for product ' + product + '<br>';
+              } else {            
+                data.Contents.forEach(function (obj) {
+                  console.log('FOUND: ' + obj.Key);
+                  //console.log("## objKeys BEFORE:" + objKeys);
+                  //objKeys += obj.Key + "<br>";
+                  //console.log("objKeys after:" + objKeys);
+                  results.innerHTML += "<a href='https://tapestrymusic.sirv.com/" + obj.Key + "' target='_blank'>https://tapestrymusic.sirv.com/" + obj.Key + "</a><br>";
+                });
+              }        
+            });
+
+          });
+        });
+        //console.log("!! objKeys final:" + objKeys);
+        //results.innerHTML = objKeys;
+
+        console.log("## start of listKeysForProductInDirectory");
+      }
+        // s3.ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+        //         .withBucketName(bucketName).withPrefix(prefix)
+        //         .withDelimiter(delimiter);
+        // ObjectListing objects = _client.listObjects(listObjectsRequest);
+        // return objects.getCommonPrefixes();
+    
+
+  //listObjs();
+  //listKeysInDirectory("large/"); 
+  
+      // prepare primary image - ensure it is jpg, convert if needed:
+  document.querySelector("#file-chooser").onchange = function() {
+      dTmain.items.clear();// clear any jpg converted files from previous file selections.
+      
+      var n = 0;
+        file = fileChooser.files[n];
+        if (!file) {
+          return;
+        }
+        
+        var getExtension = file.name.slice((file.name.lastIndexOf(".") - 1 >>> 0) + 2);
+        console.log(file.name + ": extension = " + getExtension);
+        //if (getExtension == ".jpeg") {
+        //  console.log("jpeg extension: todo: auto change to jpg extension");
+          // rename file to .jpg and continue to skip the format conversion:
+          // todo: filename extension change from jpeg to jpg
+          //continue;
+        //}
+        //if (getExtension != (".jpg" || ".jpeg")) {
+          console.log("main image is not jpg: launching converter!");
+          var imgImage = new Image;
+          imgImage.onload = convert2main;
+          imgImage.src = URL.createObjectURL(this.files[n]);
+          //fileChooser2.files[n] = imgImage;
+          this.files[n] = imgImage;
+          console.log("after setting the main files obj to new file:");
+          console.dir(this.files[n]);
+        //}
+    
+    }
+
+
+    document.querySelector("#file-chooser2").onchange = function() {
+      dT.items.clear();// clear any jpg converted files from previous file selections.
+
+      for(n=0;n<10;n++) {
+        file = fileChooser2.files[n];
+        if (!file) {
+          continue;
+        }
+        
+        var getExtension = file.name.slice((file.name.lastIndexOf(".") - 1 >>> 0) + 2);
+        console.log(file.name + ": extension = " + getExtension);
+        if (getExtension == ".jpeg") {
+          console.log("jpeg extension: todo: auto change to jpg extension");
+          // rename file to .jpg and continue to skip the format conversion:
+          // todo: filename extension change from jpeg to jpg
+          //continue;
+        }
+        if (getExtension != (".jpg" || ".jpeg")) {
+          console.log("not jpg: launching converter!");
+          var imgImage = new Image;
+          imgImage.onload = convert2;
+          imgImage.src = URL.createObjectURL(this.files[n]);
+          //fileChooser2.files[n] = imgImage;
+          this.files[n] = imgImage;
+          console.log("after setting the files obj to new file:");
+          console.dir(this.files[n]);
+        }
+      }
+      console.log("after looping through all of file object:");
+      console.dir(this.files);
+    };
+    
+    function convert2main() {
+      console.log("launching convert2main");
+      URL.revokeObjectURL(this.src);             // free up memory
+      var cCanvas = document.createElement("canvas"),  // create a temp. canvas
+          ctx = cCanvas.getContext("2d");
+          cCanvas.width = this.width;                      // set size = image, draw
+          cCanvas.height = this.height;
+      ctx.drawImage(this, 0, 0);
+                      
+      // convert to Blob (async)
+      cCanvas.toBlob( (blob) => {
+        const file = new File( [ blob ], "mycanvas.jpg" );
+        //const dT = new DataTransfer();
+        dTmain.items.add( file );
+        document.querySelector( "#jpg_version_main" ).files = dTmain.files;
+      } , "image/jpeg", 0.70);  // mime=JPEG, quality=0.80
+      console.log("added jpg file to jpg_version_main files");
+    
+
+
+      // create new image object for jpg image:
+      // convert to File object, NOTE: we're using binary mime-type for the final Blob/File
+      
+      // working downloader start:
+      // var jpeg = cCanvas.toDataURL("image/jpeg", 0.80);  // mime=JPEG, quality=0.75
+      // console.log(jpeg.length);
+      // this.src = jpeg.src;
+      // console.log("finished setting file src to the new jpeg src");
+      // working downloader end
+      
+      // if needed, download the file to your browser:
+      // convert to File object, NOTE: we're using binary mime-type for the final Blob/File
+      // cCanvas.toBlob(function(blobBlob) {
+      //   var fileFile = new File([blobBlob], "tapProdImg.jpg", {type: "application/octet-stream"});
+      //   window.location = URL.createObjectURL(fileFile);
+      // }, "image/jpeg", 0.80);  // mime=JPEG, quality=0.80
+    }
+
+    function convert2() {
+      console.log("launching convert2");
+      URL.revokeObjectURL(this.src);             // free up memory
+      var cCanvas = document.createElement("canvas"),  // create a temp. canvas
+          ctx = cCanvas.getContext("2d");
+          cCanvas.width = this.width;                      // set size = image, draw
+          cCanvas.height = this.height;
+      ctx.drawImage(this, 0, 0);
+                      
+      // convert to Blob (async)
+      cCanvas.toBlob( (blob) => {
+        const file = new File( [ blob ], "mycanvas.jpg" );
+        //const dT = new DataTransfer();
+        dT.items.add( file );
+        document.querySelector( "#jpg_version" ).files = dT.files;
+      } , "image/jpeg", 0.70);  // mime=JPEG, quality=0.80
+      console.log("added jpg file to jpg_version files");
+    
+
+
+      // create new image object for jpg image:
+      // convert to File object, NOTE: we're using binary mime-type for the final Blob/File
+      
+      // working downloader start:
+      // var jpeg = cCanvas.toDataURL("image/jpeg", 0.80);  // mime=JPEG, quality=0.75
+      // console.log(jpeg.length);
+      // this.src = jpeg.src;
+      // console.log("finished setting file src to the new jpeg src");
+      // working downloader end
+      
+      // if needed, download the file to your browser:
+      // convert to File object, NOTE: we're using binary mime-type for the final Blob/File
+      // cCanvas.toBlob(function(blobBlob) {
+      //   var fileFile = new File([blobBlob], "tapProdImg.jpg", {type: "application/octet-stream"});
+      //   window.location = URL.createObjectURL(fileFile);
+      // }, "image/jpeg", 0.80);  // mime=JPEG, quality=0.80
+    }
+    
+    // NOTE: toBlob() is not supported in IE, use a polyfill for IE.
+  </script>
+
+</body></html>
